@@ -1,0 +1,112 @@
+package genericUtility;
+
+import java.io.IOException;
+
+import org.testng.ITestContext;
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+import org.testng.Reporter;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+import com.aventstack.extentreports.reporter.configuration.Theme;
+
+public class ListenersImplementation implements ITestListener {
+
+	JavaUtility jUtil = new JavaUtility();
+	String dateTimeStamp = jUtil.getCalendarDetails("dd-MM-YYYY hh-mm-ss");
+	
+	ExtentReports reports;
+	ExtentTest test;
+	
+	@Override
+	public void onTestStart(ITestResult result) {
+		String methodName = result.getMethod().getMethodName();
+		System.out.println(methodName+" Test method started");
+		Reporter.log(methodName+" Test method started");
+		
+		//Creating fields in the extent reports for every test method getting executed
+		test = reports.createTest(methodName);
+	}
+
+	@Override
+	public void onTestSuccess(ITestResult result) {
+		//Fetching method name of the test method during runtime
+		String methodName = result.getMethod().getMethodName();
+		//The below message will get printed in the console output window
+		System.out.println(methodName+" Test method executed successfully");
+		//The below message will get logged in TestNG report
+		Reporter.log(methodName+" Test method executed successfully");
+		//Logging the status as PASS in the extent reports for the test method getting executed successfully
+		test.log(Status.PASS, methodName+" - executed successfully");
+	}
+
+	@Override
+	public void onTestFailure(ITestResult result) {
+		String methodName = result.getMethod().getMethodName();
+		System.out.println(methodName+" Test method failed");
+		Reporter.log(methodName+" Test method failed");
+		//Logging the status as FAIL in the extent reports for the test method getting failed
+		test.log(Status.FAIL, methodName+" -- failed");
+		//Logging the INFORMATION i.e., the throwable message in the extent reports for the failed test method
+		test.log(Status.INFO, result.getThrowable());
+		//Creating screenshot name with method name and date time stamp to make the name unique everytime
+		String screenshotName = methodName+"--"+dateTimeStamp;
+		SeleniumUtility sUtil = new SeleniumUtility();
+		try {
+			//Capturing the screenshot of the webpage for a failed test method and returning its absolute path
+			String path = sUtil.takeScreenshotOfWebPage(BaseClass.sDriver, screenshotName);
+			//Attaching screenshot to the failed test in Extent Report by passing the absolute path of SS
+			test.addScreenCaptureFromPath(path);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	@Override
+	public void onTestSkipped(ITestResult result) {
+		String methodName = result.getMethod().getMethodName();
+		System.out.println(methodName+"Test method skipped");
+		Reporter.log(methodName+"Test method skipped");
+		//Logging the status as SKIP in the extent reports for the test method getting skipped
+		test.log(Status.SKIP, methodName+" --skipped");
+	}
+
+	@Override
+	public void onTestFailedButWithinSuccessPercentage(ITestResult result) {
+	}
+
+	@Override
+	public void onTestFailedWithTimeout(ITestResult result) {
+	}
+
+	@Override
+	public void onStart(ITestContext context) {
+		System.out.println("Suite execution started");
+		//Configuring the extent report i.e., setting name, path and other configurations
+		ExtentSparkReporter reporter = new ExtentSparkReporter(".\\Extent Reports\\report--"+dateTimeStamp+".html");
+		reporter.config().setDocumentTitle("VTiger Execution reports");
+		reporter.config().setReportName("VTiger Report");
+		reporter.config().setTheme(Theme.DARK);
+		
+		//Generating an empty Extent report with all the configuration done using ExtentSparkReporter
+		reports = new ExtentReports();
+		reports.attachReporter(reporter);
+		reports.setSystemInfo("Base URL", "http://localhost:8888");
+		reports.setSystemInfo("Base Platform", "Windows");
+		reports.setSystemInfo("Base browser", "Chrome");
+		reports.setSystemInfo("Test Engineer", "Rajat");
+		
+	}
+
+	@Override
+	public void onFinish(ITestContext context) {
+		System.out.println("Suite execution ended");
+		
+		//Flushing the Extent Report to the specified location
+		reports.flush();
+	}
+
+}
