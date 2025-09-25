@@ -23,5 +23,6 @@ public class TC_002 extends BaseClass{
 		String mobile = eUtil.getSingleDataFromExcelFile("Leads", 4, 5);
 		CreatingNewLeadPage cnlp = new CreatingNewLeadPage(driver);
 		cnlp.createNewLead(lastName, company, leadSource, noOfEmployees, mobile);
+		System.out.println("TC_002 executed");
 	}
 }
